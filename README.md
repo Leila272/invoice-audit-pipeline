@@ -26,6 +26,10 @@ El proyecto integra diversas tecnologías líderes mediante el consumo de **APIs
 *   **Eficiencia Operativa:** Tracking automático de tiempo ahorrado (Minutos/Horas).
 *   **Trazabilidad:** Auditoría completa del estado de procesamiento (Aprobado/Rechazado).
 
+## 📈 Dashboard de Control de Integridad
+<img width="906" height="510" alt="image" src="https://github.com/user-attachments/assets/96f6d1d5-2ca5-4448-b9d0-560bd8744a6a" />
+
+
 ## 🚀 Cómo ejecutarlo
 1. Clonar el repositorio.
 2. Configurar las variables de entorno para las **API Keys** de Azure y credenciales de PostgreSQL.
