@@ -1,0 +1,189 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6b0fb24c-b061-4738-a4d1-7e2f9ac5ee9d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "C:\\Users\\Victor\\.n8n-files\\20398469934_011_00001_00000015.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "77aae205-c7c3-40a9-8b8d-c60c759960a9",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://doc-intelligence-leila.cognitiveservices.azure.com/formrecognizer/documentModels/prebuilt-invoice:analyze?api-version=2023-07-31",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            },
+            {}
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "47848dba-48e0-45e0-b213-d3a9ba1ef6be",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RAN5KU5o3ExgSB0L",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.headers['operation-location'] }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "2e8d196b-7b52-4df3-ac7c-65518fce7ec0",
+      "name": "HTTP Request1",
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RAN5KU5o3ExgSB0L",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b8115da0-ce30-4f63-b2c0-0e3e4f0fddf3",
+      "name": "Wait",
+      "webhookId": "2297d314-dcef-45e0-b272-257b4e318122"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (let item of $input.all()) {\n  // Extraemos el texto de la factura (lo que Azure leyó)\n  const content = item.json.analyzeResult?.content || \"\";\n  \n  // Creamos el reporte con valores por defecto\n  let status = \"APPROVED\";\n  let alerts = [];\n\n  // CONTROL 1: Validar CUIT (Buscamos el que aparecía en tu factura)\n  const cuitEsperado = \"20398469934\";\n  if (!content.includes(cuitEsperado)) {\n    status = \"REJECTED\";\n    alerts.push(\"CUIT no encontrado o no coincide.\");\n  }\n\n  // CONTROL 2: Validar Año (Buscamos 2026)\n  if (!content.includes(\"2026\")) {\n    status = \"FLAGGED\"; // Cambiamos a FLAGGED si la factura es vieja\n    alerts.push(\"Atención: La factura no es del año 2026.\");\n  }\n\n  // Guardamos todo en el objeto final\n  item.json.audit_report = {\n    audit_date: new Date().toISOString().split('T')[0],\n    status: status,\n    alerts: alerts,\n    cuit_valid: content.includes(cuitEsperado)\n  };\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "95d2acfc-6102-4d88-87d6-3aa53e6530c0",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e8d57112-5726-40d3-bd03-6658c5556129",
+  "meta": {
+    "instanceId": "b28cbc5333bc3dbc303dde38b8f6b8af269784911a106823074bf829477933c9"
+  },
+  "id": "E3WRPMB87CGckK2Z",
+  "tags": []
+}
